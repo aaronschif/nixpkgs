@@ -40,6 +40,7 @@ in {
     package = mkOption {
       description = "Elasticsearch package to use.";
       default = pkgs.elasticsearch;
+      defaultText = "pkgs.elasticsearch";
       type = types.package;
     };
 
@@ -127,6 +128,7 @@ in {
       description = "Elasticsearch Daemon";
       wantedBy = [ "multi-user.target" ];
       after = [ "network-interfaces.target" ];
+      path = [ pkgs.inetutils ];
       environment = { ES_HOME = cfg.dataDir; };
       serviceConfig = {
         ExecStart = "${cfg.package}/bin/elasticsearch -Des.path.conf=${configDir} ${toString cfg.extraCmdLineOptions}";
@@ -138,8 +140,7 @@ in {
         if [ "$(id -u)" = 0 ]; then chown -R elasticsearch ${cfg.dataDir}; fi
 
         # Install plugins
-        rm ${cfg.dataDir}/plugins || true
-        ln -s ${esPlugins}/plugins ${cfg.dataDir}/plugins
+        ln -sfT ${esPlugins}/plugins ${cfg.dataDir}/plugins
       '';
       postStart = mkBefore ''
         until ${pkgs.curl}/bin/curl -s -o /dev/null ${cfg.listenAddress}:${toString cfg.port}; do

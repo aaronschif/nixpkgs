@@ -66,6 +66,7 @@
   chattered = "Phil Scott <me@philscotted.com>";
   christopherpoole = "Christopher Mark Poole <mail@christopherpoole.net>";
   coconnor = "Corey O'Connor <coreyoconnor@gmail.com>";
+  codsl = "codsl <codsl@riseup.net>";
   codyopel = "Cody Opel <codyopel@gmail.com>";
   copumpkin = "Dan Peebles <pumpkingod@gmail.com>";
   coroa = "Jonas Hörsch <jonas@chaoflow.net>";
@@ -339,6 +340,7 @@
   zagy = "Christian Zagrodnick <cz@flyingcircus.io>";
   zef = "Zef Hemel <zef@zef.me>";
   zimbatm = "zimbatm <zimbatm@zimbatm.com>";
+  zohl = "Al Zohali <zohl@fmap.me>";
   zoomulator = "Kim Simmons <zoomulator@gmail.com>";
   Gonzih = "Max Gonzih <gonzih@gmail.com>";
 }
