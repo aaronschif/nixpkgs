@@ -5,14 +5,14 @@ with import ./lib.nix { inherit pkgs; };
 self: super: {
 
   # Some packages need a non-core version of Cabal.
-  Cabal_1_18_1_6 = dontCheck super.Cabal_1_18_1_6;
-  Cabal_1_20_0_3 = dontCheck super.Cabal_1_20_0_3;
+  Cabal_1_18_1_7 = dontCheck super.Cabal_1_18_1_7;
+  Cabal_1_20_0_4 = dontCheck super.Cabal_1_20_0_4;
   Cabal_1_22_4_0 = dontCheck super.Cabal_1_22_4_0;
   cabal-install = (dontCheck super.cabal-install).overrideScope (self: super: { Cabal = self.Cabal_1_22_4_0; });
-  cabal-install_1_18_1_0 = (dontCheck super.cabal-install_1_18_1_0).overrideScope (self: super: { Cabal = self.Cabal_1_18_1_6; });
+  cabal-install_1_18_1_0 = (dontCheck super.cabal-install_1_18_1_0).overrideScope (self: super: { Cabal = self.Cabal_1_18_1_7; });
 
   # Link statically to avoid runtime dependency on GHC.
-  jailbreak-cabal = (disableSharedExecutables super.jailbreak-cabal).override { Cabal = dontJailbreak self.Cabal_1_20_0_3; };
+  jailbreak-cabal = (disableSharedExecutables super.jailbreak-cabal).override { Cabal = dontJailbreak self.Cabal_1_20_0_4; };
 
   # Apply NixOS-specific patches.
   ghc-paths = appendPatch super.ghc-paths ./patches/ghc-paths-nix.patch;
@@ -35,9 +35,6 @@ self: super: {
   hspec-expectations = dontCheck super.hspec-expectations;
   hspec = super.hspec.override { stringbuilder = dontCheck super.stringbuilder; };
   HTTP = dontCheck super.HTTP;
-  mwc-random_0_13_2_2 = dontCheck super.mwc-random_0_13_2_2;
-  mwc-random_0_13_3_0 = dontCheck super.mwc-random_0_13_3_0;
-  mwc-random = dontCheck super.mwc-random;
   nanospec_0_2_0 = dontCheck super.nanospec_0_2_0;
   nanospec = dontCheck super.nanospec;
   options_1_2_1 = dontCheck super.options_1_2_1;
@@ -326,7 +323,7 @@ self: super: {
   github-types = dontCheck super.github-types;          # http://hydra.cryp.to/build/1114046/nixlog/1/raw
   hadoop-rpc = dontCheck super.hadoop-rpc;              # http://hydra.cryp.to/build/527461/nixlog/2/raw
   hasql = dontCheck super.hasql;                        # http://hydra.cryp.to/build/502489/nixlog/4/raw
-  hjsonschema = overrideCabal super.hjsonschema (drv: { testTarget = "local"; });
+  hjsonschema = overrideCabal (super.hjsonschema.override { hjsonpointer = self.hjsonpointer_0_2_0_4; }) (drv: { testTarget = "local"; });
   hoogle = overrideCabal super.hoogle (drv: { testTarget = "--test-option=--no-net"; });
   marmalade-upload = dontCheck super.marmalade-upload;  # http://hydra.cryp.to/build/501904/nixlog/1/raw
   network-transport-tcp = dontCheck super.network-transport-tcp;
@@ -436,6 +433,7 @@ self: super: {
   itanium-abi = dontCheck super.itanium-abi;
   katt = dontCheck super.katt;
   language-slice = dontCheck super.language-slice;
+  ldap-client = dontCheck super.ldap-client;
   lensref = dontCheck super.lensref;
   liquidhaskell = dontCheck super.liquidhaskell;
   lucid = dontCheck super.lucid; #https://github.com/chrisdone/lucid/issues/25
@@ -605,14 +603,8 @@ self: super: {
   # https://github.com/junjihashimoto/test-sandbox-compose/issues/2
   test-sandbox-compose = dontCheck super.test-sandbox-compose;
 
-  # https://github.com/jgm/pandoc/issues/2190
-  pandoc = overrideCabal super.pandoc (drv: {
-    enableSharedExecutables = false;
-    postInstall = ''            # install man pages
-      mv man $out/
-      find $out/man -type f ! -name "*.[0-9]" -exec rm {} +
-    '';
-  });
+  # https://github.com/jgm/pandoc/issues/2709
+  pandoc = disableSharedExecutables super.pandoc;
 
   # Tests attempt to use NPM to install from the network into
   # /homeless-shelter. Disabled.
@@ -626,14 +618,6 @@ self: super: {
 
   # https://github.com/haskell/haddock/issues/378
   haddock-library = dontCheck super.haddock-library;
-
-  # Already fixed in upstream darcs repo.
-  xmonad-contrib = overrideCabal super.xmonad-contrib (drv: {
-    postPatch = ''
-      sed -i -e '24iimport Control.Applicative' XMonad/Util/Invisible.hs
-      sed -i -e '22iimport Control.Applicative' XMonad/Hooks/DebugEvents.hs
-    '';
-  });
 
   # https://github.com/anton-k/csound-expression-dynamic/issues/1
   csound-expression-dynamic = dontHaddock super.csound-expression-dynamic;
@@ -656,7 +640,19 @@ self: super: {
   spaceprobe = addBuildTool super.spaceprobe self.llvmPackages.llvm;
 
   # Tries to run GUI in tests
-  leksah = dontCheck super.leksah;
+  leksah = dontCheck (overrideCabal super.leksah (drv: {
+    executableSystemDepends = (drv.executableSystemDepends or []) ++ (with pkgs; [
+      gnome3.defaultIconTheme # Fix error: Icon 'window-close' not present in theme ...
+      wrapGAppsHook           # Fix error: GLib-GIO-ERROR **: No GSettings schemas are installed on the system
+      gtk3                    # Fix error: GLib-GIO-ERROR **: Settings schema 'org.gtk.Settings.FileChooser' is not installed
+    ]);
+    postPatch = (drv.postPatch or "") + ''
+      for f in src/IDE/Leksah.hs src/IDE/Utils/ServerConnection.hs
+      do
+        substituteInPlace "$f" --replace "\"leksah-server\"" "\"${self.leksah-server}/bin/leksah-server\""
+      done
+    '';
+  }));
 
   # Patch to consider NIX_GHC just like xmonad does
   dyre = appendPatch super.dyre ./patches/dyre-nix.patch;
@@ -773,9 +769,6 @@ self: super: {
   elm-server = markBroken super.elm-server;
   elm-yesod = markBroken super.elm-yesod;
 
-  # https://github.com/GaloisInc/HaNS/pull/8
-  hans = appendPatch super.hans ./patches/hans-disable-webserver.patch;
-
   # https://github.com/athanclark/sets/issues/2
   sets = dontCheck super.sets;
 
@@ -840,6 +833,9 @@ self: super: {
   configurator = dontCheck super.configurator;
 
   # The cabal files for these libraries do not list the required system dependencies.
+  miniball = overrideCabal super.miniball (drv: {
+    librarySystemDepends = [ pkgs.miniball ];
+  });
   SDL-image = overrideCabal super.SDL-image (drv: {
     librarySystemDepends = [ pkgs.SDL pkgs.SDL_image ] ++ drv.librarySystemDepends or [];
   });
@@ -943,4 +939,22 @@ self: super: {
 
   # https://github.com/mainland/language-c-quote/issues/57
   language-c-quote = super.language-c-quote.override { alex = self.alex_3_1_4; };
+
+  # https://github.com/agda/agda/issues/1840
+  Agda_2_4_2_3 = super.Agda_2_4_2_3.override {
+    unordered-containers = self.unordered-containers_0_2_5_1;
+    cpphs = self.cpphs_1_19_3;
+  };
+  Agda_2_4_2_4 = super.Agda_2_4_2_4.override {
+    unordered-containers = self.unordered-containers_0_2_5_1;
+    cpphs = self.cpphs_1_19_3;
+  };
+  Agda = super.Agda.override {
+    unordered-containers = self.unordered-containers_0_2_5_1;
+    cpphs = self.cpphs_1_19_3;
+  };
+
+  # We get lots of strange compiler errors during the test suite run.
+  jsaddle = dontCheck super.jsaddle;
+
 }

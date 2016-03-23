@@ -5,7 +5,7 @@
 assert stdenv.system == "x86_64-linux";
 
 let
-  version = "1.0.19.106.gb8a7150f";
+  version = "1.0.25.127.g58007b4c-22";
 
   deps = [
     alsaLib
@@ -50,7 +50,7 @@ stdenv.mkDerivation {
   src =
     fetchurl {
       url = "http://repository-origin.spotify.com/pool/non-free/s/spotify-client/spotify-client_${version}_amd64.deb";
-      sha256 = "be6b99329bb2fccdc9d77bc949dd463576fdb40db7f56195b4284bd348c470be";
+      sha256 = "1fxps0ls0g4idw10la3qrpmp2jn85lkm3xj4nam4ycx0jj8g1v2p";
     };
 
   buildInputs = [ dpkg makeWrapper ];
@@ -87,7 +87,14 @@ stdenv.mkDerivation {
       # Desktop file
       mkdir -p "$out/share/applications/"
       cp "$out/share/spotify/spotify.desktop" "$out/share/applications/"
-      sed -i "s|Icon=.*|Icon=$out/share/spotify/Icons/spotify-linux-512.png|" "$out/share/applications/spotify.desktop"
+
+      # Icons
+      for i in 16 22 24 32 48 64 128 256 512; do
+        ixi="$i"x"$i"
+        mkdir -p "$out/share/icons/hicolor/$ixi/apps"
+        ln -s "$out/share/spotify/icons/spotify-linux-$i.png" \
+          "$out/share/icons/hicolor/$ixi/apps/spotify-client.png"
+      done
     '';
 
   dontStrip = true;

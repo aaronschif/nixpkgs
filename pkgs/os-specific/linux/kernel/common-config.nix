@@ -21,6 +21,12 @@
 with stdenv.lib;
 
 ''
+  # Compress kernel modules for a sizable disk space savings.
+  ${optionalString (versionAtLeast version "3.18") ''
+    MODULE_COMPRESS y
+    MODULE_COMPRESS_XZ y
+  ''}
+
   # Debugging.
   DEBUG_KERNEL y
   TIMER_STATS y
@@ -355,6 +361,9 @@ with stdenv.lib;
   X86_CHECK_BIOS_CORRUPTION y
   X86_MCE y
 
+  # PCI-Expresscard hotplug support
+  ${optionalString (versionAtLeast version "3.12") "HOTPLUG_PCI_PCIE y"}
+
   # Linux containers.
   NAMESPACES? y #  Required by 'unshare' used by 'nixos-install'
   RT_GROUP_SCHED? y
@@ -469,6 +478,9 @@ with stdenv.lib;
   ''}
   ${optionalString (versionAtLeast version "3.7") ''
     MEDIA_USB_SUPPORT y
+    ${optionalString (!(features.chromiumos or false)) ''
+      MEDIA_PCI_SUPPORT y
+    ''}
   ''}
 
   # Our initrd init uses shebang scripts, so can't be modular.

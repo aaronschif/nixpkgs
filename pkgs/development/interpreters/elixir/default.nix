@@ -2,11 +2,11 @@
 
 stdenv.mkDerivation rec {
   name = "elixir-${version}";
-  version = "1.2.0";
+  version = "1.2.3";
 
   src = fetchurl {
     url = "https://github.com/elixir-lang/elixir/archive/v${version}.tar.gz";
-    sha256 = "0s3j7ra9gb2p3dwgfxghvc9mkv6ffgvz27aj5wgwk0xq2d9fws4z";
+    sha256 = "09s8469830s4070i0m04fxdhqimkdyc5k9jylm5vpfz9l3z4wvl8";
   };
 
   buildInputs = [ erlang rebar makeWrapper ];

@@ -3,11 +3,10 @@
 }:
 
 # nodejs 5.0.0 can't be built on armv5tel. Armv6 with FPU, minimum I think.
-# Related post: http://zo0ok.com/techfindings/archives/1820
 assert stdenv.system != "armv5tel-linux";
 
 let
-  version = "5.4.1";
+  version = "5.9.0";
 
   deps = {
     inherit openssl zlib libuv;
@@ -31,14 +30,17 @@ in stdenv.mkDerivation {
 
   src = fetchurl {
     url = "http://nodejs.org/dist/v${version}/node-v${version}.tar.gz";
-    sha256 = "032ylpjrnjpc4cjqkrax3slli40025kw74yk2dynp86ywgr5wibq";
+    sha256 = "0ghgfqs64794g6ggrvsdcqwz2lnhck0yiy2fyyg3in8z91k5l5z5";
   };
 
   configureFlags = concatMap sharedConfigureFlags (builtins.attrNames deps) ++ [ "--without-dtrace" ];
   dontDisableStatic = true;
   prePatch = ''
     patchShebangs .
+    sed -i 's/raise.*No Xcode or CLT version detected.*/version = "7.0.0"/' tools/gyp/pylib/gyp/xcode_emulation.py
   '';
+
+  patches = stdenv.lib.optionals stdenv.isDarwin [ ./no-xcode.patch ];
 
   buildInputs = [ python which zlib libuv openssl python ]
     ++ optionals stdenv.isLinux [ utillinux http-parser ]

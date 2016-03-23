@@ -1,15 +1,28 @@
 { stdenv, fetchurl, rpmextract, glibc
 , dataDir ? "/var/lib/plex" # Plex's data directory must be baked into the package due to symlinks.
+, enablePlexPass ? false
 }:
 
-stdenv.mkDerivation rec {
+let
+  plexpkg = if enablePlexPass then {
+    version = "0.9.16.3.1840";
+    vsnHash = "cece46d";
+    sha256 = "0p1rnia18a67h05f7l7smkpry1ldkpdkyvs9fgrqpay3w0jfk9gd";
+  } else {
+    version = "0.9.15.6.1714";
+    vsnHash = "7be11e1";
+    sha256 = "1kyk41qnbm8w5bvnisp3d99cf0r72wvlggfi9h4np7sq4p8ksa0g";
+  };
+
+in stdenv.mkDerivation rec {
   name = "plex-${version}";
-  version = "0.9.14.6.1620";
-  vsnHash = "e0b7243";
+  version = plexpkg.version;
+  vsnHash = plexpkg.vsnHash;
+  sha256 = plexpkg.sha256;
 
   src = fetchurl {
-    url    = "https://downloads.plex.tv/plex-media-server/${version}-${vsnHash}/plexmediaserver-${version}-${vsnHash}.x86_64.rpm";
-    sha256 = "0br82yxnvjapvsrb0mbfd12mx7qqi9zh623jnivsjk2gxbfd3ki1";
+    url = "https://downloads.plex.tv/plex-media-server/${version}-${vsnHash}/plexmediaserver-${version}-${vsnHash}.x86_64.rpm";
+    inherit sha256;
   };
 
   buildInputs = [ rpmextract glibc ];
@@ -57,7 +70,7 @@ stdenv.mkDerivation rec {
     homepage = http://plex.tv/;
     license = licenses.unfree;
     platforms = platforms.linux;
-    maintainers = with stdenv.lib.maintainers; [ forkk thoughtpolice ];
+    maintainers = with stdenv.lib.maintainers; [ colemickens forkk thoughtpolice ];
     description = "Media / DLNA server";
     longDescription = ''
       Plex is a media server which allows you to store your media and play it

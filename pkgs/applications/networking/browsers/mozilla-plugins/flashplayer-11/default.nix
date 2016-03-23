@@ -1,4 +1,5 @@
 { stdenv
+, lib
 , fetchurl
 , zlib
 , alsaLib
@@ -54,32 +55,61 @@ let
       else             "_linux.i386"
     else throw "Flash Player is not supported on this platform";
 
+  is-i686 = (stdenv.system == "i686-linux");
 in
 stdenv.mkDerivation rec {
   name = "flashplayer-${version}";
-  version = "11.2.202.559";
+  version = "11.2.202.577";
 
   src = fetchurl {
     url = "https://fpdownload.macromedia.com/pub/flashplayer/installers/archive/fp_${version}_archive.zip";
-    sha256 = "1vb01pd1jhhh86r01nwdzcf66d72jksiyiyp92hs4khy6n5qfsl3";
+    sha256 = "1k02d6c9y8z9lxyqyq04zsc5735cvm30mkwli71mh87fr1va2q4j";
   };
 
   buildInputs = [ unzip ];
 
   postUnpack = ''
-    cd */*${arch}
-    tar -xvzf *${suffix}.tar.gz
+    pushd $sourceRoot
+    tar -xvzf *${arch}/*${suffix}.tar.gz
+
+    ${ lib.optionalString is-i686 ''
+       tar -xvzf */*_sa.*.tar.gz
+       tar -xvzf */*_sa_debug.*.tar.gz
+    ''}
+
+    popd
   '';
 
-  sourceRoot = ".";
+  sourceRoot = "fp_${version}_archive";
 
   dontStrip = true;
   dontPatchELF = true;
+
+  outputs = [ "out" ] ++ lib.optionals is-i686 ["sa" "saDbg" ];
 
   installPhase = ''
     mkdir -p $out/lib/mozilla/plugins
     cp -pv libflashplayer.so $out/lib/mozilla/plugins
     patchelf --set-rpath "$rpath" $out/lib/mozilla/plugins/libflashplayer.so
+
+    ${ lib.optionalString is-i686 ''
+       mkdir -p $sa/bin
+       cp flashplayer $sa/bin/
+
+       patchelf \
+         --set-interpreter $(cat $NIX_CC/nix-support/dynamic-linker) \
+         --set-rpath "$rpath" \
+         $sa/bin/flashplayer
+
+
+       mkdir -p $saDbg/bin
+       cp flashplayerdebugger $saDbg/bin/
+
+       patchelf \
+         --set-interpreter $(cat $NIX_CC/nix-support/dynamic-linker) \
+         --set-rpath "$rpath" \
+         $saDbg/bin/flashplayerdebugger
+    ''}
   '';
 
   passthru = {

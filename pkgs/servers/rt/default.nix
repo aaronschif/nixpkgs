@@ -1,12 +1,14 @@
 { stdenv, fetchurl, perl }:
 
 stdenv.mkDerivation rec {
-  name = "rt-4.2.12";
+  name = "rt-${version}";
+
+  version = "4.4.0";
 
   src = fetchurl {
     url = "https://download.bestpractical.com/pub/rt/release/${name}.tar.gz";
 
-    sha256 = "0r3jhgfwwhhk654zag42mrai85yrliw9sc0kgabwjvbh173204p2";
+    sha256 = "1hgz50fxv9zdcngww083aqh8vzyk148lm7mcivxflpnsqfw3696x";
   };
 
   patches = [ ./override-generated.patch ];

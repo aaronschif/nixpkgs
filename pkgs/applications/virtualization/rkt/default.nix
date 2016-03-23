@@ -1,4 +1,4 @@
-{ stdenv, lib, autoreconfHook, acl, go, file, git, wget, gnupg1, squashfsTools,
+{ stdenv, lib, autoreconfHook, acl, go, file, git, wget, gnupg1, trousers, squashfsTools,
   cpio, fetchurl, fetchFromGitHub, iptables, systemd, makeWrapper }:
 
 let
@@ -9,7 +9,7 @@ let
   stage1Flavours = [ "coreos" "fly" "host" ];
 
 in stdenv.mkDerivation rec {
-  version = "0.15.0";
+  version = "1.2.0";
   name = "rkt-${version}";
   BUILDDIR="build-${name}";
 
@@ -17,7 +17,7 @@ in stdenv.mkDerivation rec {
       rev = "v${version}";
       owner = "coreos";
       repo = "rkt";
-      sha256 = "1pw14r38p8sdkma37xx0yy3zx5yxqc12zj35anmlbmrgw4vdgavf";
+      sha256 = "0icsrh118mm3rabbcr0gd3b22m5rizdbqlrfp9d79g591p7bjh38";
   };
 
   stage1BaseImage = fetchurl {
@@ -26,7 +26,7 @@ in stdenv.mkDerivation rec {
   };
 
   buildInputs = [
-    autoreconfHook go file git wget gnupg1 squashfsTools cpio acl systemd
+    autoreconfHook go file git wget gnupg1 trousers squashfsTools cpio acl systemd
     makeWrapper
   ];
 
