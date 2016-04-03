@@ -789,10 +789,11 @@ let
   };
 
   etcd = buildFromGitHub {
-    rev    = "v2.1.2";
+    rev    = "v2.3.0";
     owner  = "coreos";
     repo   = "etcd";
-    sha256 = "1d3wl9rqbhkkdhfkjfrzjfcwz8hx315zbjbmij3pf62bc1p5nh60";
+    sha256 = "1cchlhsdbbqal145cvdiq7rzqqi131iq7z0r2hmzwx414k04wyn7";
+    buildInputs = [ pkgs.libpcap tablewriter ];
   };
 
   fsnotify.v0 = buildGoPackage rec {
@@ -3831,12 +3832,12 @@ let
     subPackages = [ "./" ];
   };
 
-  godep = buildFromGitHub {
-    rev    = "5598a9815350896a2cdf9f4f1d0a3003ab9677fb";
-    version = "2015-10-15";
+  godep = buildFromGitHub rec {
+    version = "60";
+    rev    = "v${version}";
     owner  = "tools";
     repo   = "godep";
-    sha256 = "0zc1ah5cvaqa3zw0ska89a40x445vwl1ixz8v42xi3zicx16ibwz";
+    sha256 = "1v05185ikfcb3sz9ygcwm9x8la77i27ml1bg9fs6vvahjzyr0rif";
   };
 
   color = buildFromGitHub {
