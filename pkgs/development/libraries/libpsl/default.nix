@@ -1,32 +1,36 @@
 { stdenv, fetchFromGitHub, autoreconfHook, docbook_xsl, gtk_doc, icu
-, libxslt, pkgconfig }:
+, libxslt, pkgconfig, python }:
 
 let
 
-  version = "${libVersion}-list-${listVersion}";
-
-  listVersion = "2015-08-27";
+  listVersion = "2016-03-30";
   listSources = fetchFromGitHub {
-    sha256 = "14kgxyfvvrwqyxmfy1by1pzbbv6hs9n744v8zr160rz8rln8lzb9";
-    rev = "1fc1ed365818a6a77d6f31d425ff03ca54cdc7f3";
+    sha256 = "0433ck6ykcq6pc48mvgif9f785q0ndprk77jsk58gb5289b87yns";
+    rev = "6ec573d549e25fc89d930bb64939d947bae38f68";
     repo = "list";
     owner = "publicsuffix";
   };
 
-  libVersion = "0.8.0";
+  libVersion = "0.13.0";
 
-in stdenv.mkDerivation {
+in stdenv.mkDerivation rec {
   name = "libpsl-${version}";
+  version = "${libVersion}-list-${listVersion}";
 
   src = fetchFromGitHub {
-    sha256 = "0mjnj36igk6w3c0d4k2fqqg1kl6bpnxfrcgcgz1zdw33gfa5gdi7";
+    sha256 = "12inl984r2qks51wyrzgll83y7k79q2lbhyc545dpk19qnfvp7gz";
     rev = "libpsl-${libVersion}";
     repo = "libpsl";
     owner = "rockdaboot";
   };
 
   buildInputs = [ icu libxslt ];
-  nativeBuildInputs = [ autoreconfHook docbook_xsl gtk_doc pkgconfig ];
+  nativeBuildInputs = [ autoreconfHook docbook_xsl gtk_doc pkgconfig python ];
+
+  postPatch = ''
+    substituteInPlace src/psl.c --replace bits/stat.h sys/stat.h
+    patchShebangs src/make_dafsa.py
+  '';
 
   preAutoreconf = ''
     mkdir m4
@@ -37,14 +41,18 @@ in stdenv.mkDerivation {
     # The libpsl check phase requires the list's test scripts (tests/) as well
     cp -Rv "${listSources}"/* list
   '';
-  configureFlags = "--disable-static --enable-gtk-doc --enable-man";
+  configureFlags = [
+    "--disable-builtin"
+    "--disable-static"
+    "--enable-gtk-doc"
+    "--enable-man"
+  ];
 
   enableParallelBuilding = true;
 
   doCheck = true;
 
   meta = with stdenv.lib; {
-    inherit version;
     description = "C library for the Publix Suffix List";
     longDescription = ''
       libpsl is a C library for the Publix Suffix List (PSL). A "public suffix"

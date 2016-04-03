@@ -16,13 +16,15 @@ import ./make-test.nix ({ pkgs, ...} : {
       systemd.tmpfiles.rules = [ "d /tmp 1777 root root 10d" ];
       fileSystems = mkVMOverride { "/tmp2" =
         { fsType = "tmpfs";
-          options = "mode=1777,noauto";
+          options = [ "mode=1777" "noauto" ];
         };
       };
       systemd.automounts = singleton
         { wantedBy = [ "multi-user.target" ];
           where = "/tmp2";
         };
+      users.users.sybil = { isNormalUser = true; group = "wheel"; };
+      security.sudo = { enable = true; wheelNeedsPassword = false; };
     };
 
   testScript =
@@ -80,6 +82,7 @@ import ./make-test.nix ({ pkgs, ...} : {
       };
 
       # Test whether systemd-udevd automatically loads modules for our hardware.
+      $machine->succeed("systemctl start systemd-udev-settle.service");
       subtest "udev-auto-load", sub {
           $machine->waitForUnit('systemd-udev-settle.service');
           $machine->succeed('lsmod | grep psmouse');
@@ -108,6 +111,11 @@ import ./make-test.nix ({ pkgs, ...} : {
 
       subtest "nix-db", sub {
           $machine->succeed("nix-store -qR /run/current-system | grep nixos-");
+      };
+
+      # Test sudo
+      subtest "sudo", sub {
+          $machine->succeed("su - sybil -c 'sudo true'");
       };
     '';
 })

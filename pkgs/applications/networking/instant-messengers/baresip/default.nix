@@ -4,11 +4,11 @@
 , gsm, speex, portaudio, spandsp, libuuid
 }:
 stdenv.mkDerivation rec {
-  version = "0.4.14";
+  version = "0.4.17";
   name = "baresip-${version}";
   src=fetchurl {
     url = "http://www.creytiv.com/pub/baresip-${version}.tar.gz";
-    sha256 = "19vn63j6dpybjy14mgnwf0yk2jbcbfdjs50whzwyrrkcv6ipj6hc";
+    sha256 = "106nagdyayyxj3q68bs3fsps5wnwzjh82vcmy98fp42j33q6yzny";
   };
   buildInputs = [zlib openssl libre librem pkgconfig
     cairo mpg123 gstreamer gst_ffmpeg gst_plugins_base gst_plugins_bad gst_plugins_good

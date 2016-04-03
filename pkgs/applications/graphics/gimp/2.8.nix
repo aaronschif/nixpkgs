@@ -1,21 +1,27 @@
 { stdenv, fetchurl, pkgconfig, intltool, babl, gegl, gtk, glib, gdk_pixbuf
 , pango, cairo, freetype, fontconfig, lcms, libpng, libjpeg, poppler, libtiff
 , webkit, libmng, librsvg, libwmf, zlib, libzip, ghostscript, aalib, jasper
-, python, pygtk, libart_lgpl, libexif, gettext, xlibs, wrapPython }:
+, python, pygtk, libart_lgpl, libexif, gettext, xorg, wrapPython }:
 
 stdenv.mkDerivation rec {
-  name = "gimp-2.8.14";
+  name = "gimp-2.8.16";
+
+  # This declarations for `gimp-with-plugins` wrapper,
+  # (used for determining $out/lib/gimp/${majorVersion}/ paths)
+  majorVersion = "2.0";
+  targetPluginDir = "$out/lib/gimp/${majorVersion}/plug-ins";
+  targetScriptDir = "$out/lib/gimp/${majorVersion}/scripts";
 
   src = fetchurl {
     url = "http://download.gimp.org/pub/gimp/v2.8/${name}.tar.bz2";
-    sha256 = "d82a958641c9c752d68e35f65840925c08e314cea90222ad845892a40e05b22d";
+    sha256 = "1dsgazia9hmab8cw3iis7s69dvqyfj5wga7ds7w2q5mms1xqbqwm";
   };
 
   buildInputs =
     [ pkgconfig intltool babl gegl gtk glib gdk_pixbuf pango cairo
       freetype fontconfig lcms libpng libjpeg poppler libtiff webkit
       libmng librsvg libwmf zlib libzip ghostscript aalib jasper
-      python pygtk libart_lgpl libexif gettext xlibs.libXpm
+      python pygtk libart_lgpl libexif gettext xorg.libXpm
       wrapPython
     ];
 
@@ -27,8 +33,10 @@ stdenv.mkDerivation rec {
 
   #configureFlags = [ "--disable-print" ];
 
+  enableParallelBuilding = true;
+
   # "screenshot" needs this.
-  NIX_LDFLAGS = "-rpath ${xlibs.libX11}/lib"
+  NIX_LDFLAGS = "-rpath ${xorg.libX11}/lib"
     + stdenv.lib.optionalString stdenv.isDarwin " -lintl";
 
   meta = {

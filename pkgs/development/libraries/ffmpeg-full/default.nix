@@ -138,6 +138,10 @@
 , optimizationsDeveloper ? true
 , extraWarningsDeveloper ? false
 , strippingDeveloper ? false
+/*
+ *  Darwin frameworks
+ */
+, Cocoa, CoreServices
 }:
 
 /* Maintainer notes:
@@ -231,11 +235,11 @@ assert x11grabExtlib -> libX11 != null && libXv != null;
 
 stdenv.mkDerivation rec {
   name = "ffmpeg-full-${version}";
-  version = "2.7.2";
+  version = "3.0";
 
   src = fetchurl {
-    url = "https://www.ffmpeg.org/releases/${name}.tar.bz2";
-    sha256 = "1wlygd0jp34dk4qagi4h9psn4yk8zgyj7zy9lrpm5332mm87bsvw";
+    url = "https://www.ffmpeg.org/releases/ffmpeg-${version}.tar.bz2";
+    sha256 = "1h0k05cj6j0nd2i16z7hc5scpwsbg3sfx68lvm0nlwvz5xxgg7zi";
   };
 
   patchPhase = ''patchShebangs .'';
@@ -405,7 +409,8 @@ stdenv.mkDerivation rec {
     ++ optionals x11grabExtlib [ libXext libXfixes ]
     ++ optionals nonfreeLicensing [ faac fdk_aac openssl ]
     ++ optional ((isLinux || isFreeBSD) && libva != null) libva
-    ++ optionals isLinux [ alsaLib libraw1394 libv4l ];
+    ++ optionals isLinux [ alsaLib libraw1394 libv4l ]
+    ++ optionals stdenv.isDarwin [ Cocoa CoreServices ];
 
   # Build qt-faststart executable
   buildPhase = optional qtFaststartProgram ''make tools/qt-faststart'';
@@ -444,7 +449,7 @@ stdenv.mkDerivation rec {
 
   meta = with stdenv.lib; {
     description = "A complete, cross-platform solution to record, convert and stream audio and video";
-    homepage = http://www.ffmpeg.org/;
+    homepage = https://www.ffmpeg.org/;
     longDescription = ''
       FFmpeg is the leading multimedia framework, able to decode, encode, transcode, 
       mux, demux, stream, filter and play pretty much anything that humans and machines 

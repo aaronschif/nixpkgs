@@ -1,5 +1,5 @@
 { fetchurl, stdenv, dpkg, makeWrapper, which
-,gcc, xlibs, qt4, zlib
+,gcc, xorg, qt4, zlib
 , ...}:
 
 assert stdenv.system == "i686-linux" || stdenv.system == "x86_64-linux";
@@ -12,19 +12,19 @@ let
     then "i386"
     else "amd64";
 
-  shortVersion = "1.13.1-stable";
+  shortVersion = "1.16-stable";
 
   version = "${shortVersion}_${arch}";
 
   url = "http://desktop-download.mendeley.com/download/apt/pool/main/m/mendeleydesktop/mendeleydesktop_${version}.deb";
   sha256 = if stdenv.system == arch32
-    then "21491da1608daf58da23e7e5eb7619b494b10192acc0f81575daff2a38720f50"
-    else "8db101b26dd2978e991421260a2e55d849014f64005930b2528080bbbaa78600";
+    then "da56abe0e0e86d868d305119f06cf6d14273d2f65e5c135fc2d190ca599b3cb6"
+    else "e9c2f026fd267db34396ff5f24bce9c6a4beba530bd8b40265a792d417282fba";
 
   deps = [
     gcc.cc
     qt4
-    xlibs.libX11
+    xorg.libX11
     zlib
   ];
 

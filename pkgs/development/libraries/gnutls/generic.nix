@@ -1,22 +1,21 @@
 { lib, fetchurl, stdenv, zlib, lzo, libtasn1, nettle, pkgconfig, lzip
-, guileBindings, guile, perl, gmp, autogen, libidn, p11_kit, unbound
+, guileBindings, guile, perl, gmp, autogen, libidn, p11_kit, unbound, libiconv
 , tpmSupport ? false, trousers
 
 # Version dependent args
-, version, src, patches ? []
+, version, src, patches ? [], postPatch ? "", nativeBuildInputs ? []
 , ...}:
 
 assert guileBindings -> guile != null;
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation {
   name = "gnutls-${version}";
 
-  inherit src patches;
+  inherit src patches postPatch;
 
   outputs = [ "out" "man" ];
 
   configureFlags =
-    # FIXME: perhaps use $SSL_CERT_FILE instead
     lib.optional stdenv.isLinux "--with-default-trust-store-file=/etc/ssl/certs/ca-certificates.crt"
   ++ [
     "--disable-dependency-tracking"
@@ -30,11 +29,14 @@ stdenv.mkDerivation rec {
   enableParallelBuilding = !guileBindings;
 
   buildInputs = [ lzo lzip nettle libtasn1 libidn p11_kit zlib gmp autogen ]
+    ++ lib.optional (stdenv.isFreeBSD || stdenv.isDarwin) libiconv
     ++ lib.optional (tpmSupport && stdenv.isLinux) trousers
     ++ [ unbound ]
     ++ lib.optional guileBindings guile;
 
-  nativeBuildInputs = [ perl pkgconfig ];
+  # AutoreconfHook is temporary until the patch lands upstream to fix
+  # header file generation with parallel building
+  nativeBuildInputs = [ perl pkgconfig ] ++ nativeBuildInputs;
 
   # XXX: Gnulib's `test-select' fails on FreeBSD:
   # http://hydra.nixos.org/build/2962084/nixlog/1/raw .

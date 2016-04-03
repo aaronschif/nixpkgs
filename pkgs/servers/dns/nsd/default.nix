@@ -13,11 +13,11 @@
 }:
 
 stdenv.mkDerivation rec {
-  name = "nsd-4.1.3";
+  name = "nsd-4.1.7";
 
   src = fetchurl {
     url = "http://www.nlnetlabs.nl/downloads/nsd/${name}.tar.gz";
-    sha256 = "1r8p5lqj7i6xi4k04jr1n9r1p8gwy3547hzsi8xags6krnav4z09";
+    sha256 = "12hskfgfbkvcgpa1xxkqd8lnc6xvln1amn97x6avfnj9kfrbxa3v";
   };
 
   buildInputs = [ libevent openssl ];
@@ -41,7 +41,6 @@ stdenv.mkDerivation rec {
     homepage = http://www.nlnetlabs.nl;
     description = "Authoritative only, high performance, simple and open source name server";
     license = licenses.bsd3;
-
     platforms = platforms.unix;
     maintainers = [ maintainers.hrdinka ];
   };

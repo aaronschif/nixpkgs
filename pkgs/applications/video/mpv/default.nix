@@ -21,11 +21,8 @@
 , youtubeSupport ? true, youtube-dl ? null
 , cacaSupport ? true, libcaca ? null
 , vaapiSupport ? false, libva ? null
+, waylandSupport ? false, wayland ? null, libxkbcommon ? null
 }:
-
-# TODO: Wayland support
-# TODO: investigate caca support
-# TODO: investigate lua5_sockets bug
 
 assert x11Support -> (libX11 != null && libXext != null && mesa != null && libXxf86vm != null);
 assert xineramaSupport -> (libXinerama != null && x11Support);
@@ -45,25 +42,28 @@ assert bs2bSupport -> libbs2b != null;
 assert libpngSupport -> libpng != null;
 assert youtubeSupport -> youtube-dl != null;
 assert cacaSupport -> libcaca != null;
+assert waylandSupport -> (wayland != null && libxkbcommon != null);
 
 let
   inherit (stdenv.lib) optional optionals optionalString;
 
   # Purity: Waf is normally downloaded by bootstrap.py, but
   # for purity reasons this behavior should be avoided.
+  wafVersion = "1.8.12";
   waf = fetchurl {
-    url = http://ftp.waf.io/pub/release/waf-1.8.5;
-    sha256 = "0gh266076pd9fzwkycskyd3kkv2kds9613blpxmn9w4glkiwmmh5";
+    urls = [ "http://ftp.waf.io/pub/release/waf-${wafVersion}"
+             "http://waf.io/waf-${wafVersion}" ];
+    sha256 = "12y9c352zwliw0zk9jm2lhynsjcf5jy0k1qch1c1av8hnbm2pgq1";
   };
 in
 
 stdenv.mkDerivation rec {
-  name = "mpv-${version}";
-  version = "0.9.2";
+
+  name = "mpv-${meta.version}";
 
   src = fetchurl {
-    url = "https://github.com/mpv-player/mpv/archive/v${version}.tar.gz";
-    sha256 = "0la7pmy75mq92kcrawdiw5idw6a46z7d15mlkgs0axyivdaqy560";
+    url = "https://github.com/mpv-player/mpv/archive/v${meta.version}.tar.gz";
+    sha256 = "1p0b83048g66icpz5n66v3k4ldr1z0rmg5d2rr7kcbspm1xj2cbx";
   };
 
   patchPhase = ''
@@ -79,7 +79,8 @@ stdenv.mkDerivation rec {
     "--enable-manpage-build"
     "--disable-build-date" # Purity
     "--enable-zsh-comp"
-  ] ++ optional vaapiSupport "--enable-vaapi";
+  ] ++ optional vaapiSupport "--enable-vaapi"
+  ++ optional waylandSupport "--enable-wayland";
 
   configurePhase = ''
     python ${waf} configure --prefix=$out $configureFlags
@@ -107,7 +108,8 @@ stdenv.mkDerivation rec {
     ++ optional youtubeSupport youtube-dl
     ++ optional sdl2Support SDL2
     ++ optional cacaSupport libcaca
-    ++ optional vaapiSupport libva;
+    ++ optional vaapiSupport libva
+    ++ optionals waylandSupport [ wayland libxkbcommon ];
 
   enableParallelBuilding = true;
 
@@ -127,6 +129,7 @@ stdenv.mkDerivation rec {
   '';
 
   meta = with stdenv.lib; {
+    version = "0.15.0";
     description = "A media player that supports many video formats (MPlayer and mplayer2 fork)";
     homepage = http://mpv.io;
     license = licenses.gpl2Plus;
@@ -140,3 +143,5 @@ stdenv.mkDerivation rec {
     '';
   };
 }
+# TODO: investigate caca support
+# TODO: investigate lua5_sockets bug

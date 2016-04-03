@@ -1,35 +1,48 @@
 { stdenv, fetchurl, glib, flex, bison, pkgconfig, libffi, python
-, libintlOrEmpty, autoconf, automake, otool }:
+, libintlOrEmpty, cctools
+, substituteAll, nixStoreDir ? builtins.storeDir
+}:
 # now that gobjectIntrospection creates large .gir files (eg gtk3 case)
 # it may be worth thinking about using multiple derivation outputs
 # In that case its about 6MB which could be separated
 
 let
-  ver_maj = "1.44";
+  ver_maj = "1.46";
   ver_min = "0";
 in
+with stdenv.lib;
 stdenv.mkDerivation rec {
   name = "gobject-introspection-${ver_maj}.${ver_min}";
 
   src = fetchurl {
     url = "mirror://gnome/sources/gobject-introspection/${ver_maj}/${name}.tar.xz";
-    sha256 = "1b972qg2yb51sdavfvb6kc19akwc15c1bwnbg81vadxamql2q33g";
+    sha256 = "6658bd3c2b8813eb3e2511ee153238d09ace9d309e4574af27443d87423e4233";
   };
 
   buildInputs = [ flex bison pkgconfig python ]
     ++ libintlOrEmpty
-    ++ stdenv.lib.optional stdenv.isDarwin otool;
+    ++ stdenv.lib.optional stdenv.isDarwin cctools;
   propagatedBuildInputs = [ libffi glib ];
 
-  # Tests depend on cairo, which is undesirable (it pulls in lots of
-  # other dependencies).
+  # The '--disable-tests' flag is no longer recognized, so can be safely removed
+  # next time this package changes.
   configureFlags = [ "--disable-tests" ];
+
+  preConfigure = ''
+    sed 's|/usr/bin/env ||' -i tools/g-ir-tool-template.in
+  '';
 
   postInstall = "rm -rf $out/share/gtk-doc";
 
   setupHook = ./setup-hook.sh;
 
-  patches = [ ./absolute_shlib_path.patch ];
+  patches = stdenv.lib.singleton (substituteAll {
+    src = ./absolute_shlib_path.patch;
+    inherit nixStoreDir;
+  }) ++ optional stdenv.isDarwin (substituteAll {
+    src = ./darwin-fixups.patch;
+    inherit nixStoreDir;
+  });
 
   meta = with stdenv.lib; {
     description = "A middleware layer between C libraries and language bindings";

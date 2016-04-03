@@ -1,55 +1,64 @@
 { stdenv, fetchurl, python, zlib, pkgconfig, glib, ncurses, perl, pixman
-, attr, libcap, vde2, alsaLib, texinfo, libuuid, flex, bison, lzo, snappy
-, libseccomp, libaio, libcap_ng, gnutls, nettle
+, vde2, alsaLib, texinfo, libuuid, flex, bison, lzo, snappy
+, libaio, gnutls, nettle
 , makeWrapper
-, pulseSupport ? true, libpulseaudio
-, sdlSupport ? true, SDL
+, attr, libcap, libcap_ng
+, CoreServices, Cocoa, rez, setfile
+, numaSupport ? stdenv.isLinux, numactl
+, seccompSupport ? stdenv.isLinux, libseccomp
+, pulseSupport ? !stdenv.isDarwin, libpulseaudio
+, sdlSupport ? !stdenv.isDarwin, SDL
 , vncSupport ? true, libjpeg, libpng
-, spiceSupport ? true, spice, spice_protocol, usbredir
+, spiceSupport ? !stdenv.isDarwin, spice, spice_protocol, usbredir
 , x86Only ? false
 }:
 
 with stdenv.lib;
 let
-  n = "qemu-2.4.0";
+  version = "2.5.1";
   audio = optionalString (hasSuffix "linux" stdenv.system) "alsa,"
     + optionalString pulseSupport "pa,"
     + optionalString sdlSupport "sdl,";
 in
 
 stdenv.mkDerivation rec {
-  name = n + (if x86Only then "-x86-only" else "");
+  name = "qemu-" + stdenv.lib.optionalString x86Only "x86-only-" + version;
 
   src = fetchurl {
-    url = "http://wiki.qemu.org/download/${n}.tar.bz2";
-    sha256 = "0836gqv5zcl0xswwjcns3mlkn18lyz2fiq8rl1ihcm6cpf8vkc3j";
+    url = "http://wiki.qemu.org/download/qemu-${version}.tar.bz2";
+    sha256 = "0b2xa8604absdmzpcyjs7fix19y5blqmgflnwjzsp1mp7g1m51q2";
   };
 
   buildInputs =
-    [ python zlib pkgconfig glib ncurses perl pixman attr libcap
-      vde2 texinfo libuuid flex bison makeWrapper lzo snappy libseccomp
-      libcap_ng gnutls nettle
+    [ python zlib pkgconfig glib ncurses perl pixman
+      vde2 texinfo libuuid flex bison makeWrapper lzo snappy
+      gnutls nettle
     ]
+    ++ optionals stdenv.isDarwin [ CoreServices Cocoa rez setfile ]
+    ++ optionals seccompSupport [ libseccomp ]
+    ++ optionals numaSupport [ numactl ]
     ++ optionals pulseSupport [ libpulseaudio ]
     ++ optionals sdlSupport [ SDL ]
     ++ optionals vncSupport [ libjpeg libpng ]
     ++ optionals spiceSupport [ spice_protocol spice usbredir ]
-    ++ optionals (hasSuffix "linux" stdenv.system) [ alsaLib libaio ];
+    ++ optionals stdenv.isLinux [ alsaLib libaio libcap_ng libcap attr ];
 
   enableParallelBuilding = true;
 
   patches = [ ./no-etc-install.patch ];
 
   configureFlags =
-    [ "--enable-seccomp"
-      "--smbd=smbd" # use `smbd' from $PATH
+    [ "--smbd=smbd" # use `smbd' from $PATH
       "--audio-drv-list=${audio}"
       "--sysconfdir=/etc"
       "--localstatedir=/var"
     ]
+    ++ optional numaSupport "--enable-numa"
+    ++ optional seccompSupport "--enable-seccomp"
     ++ optional spiceSupport "--enable-spice"
     ++ optional x86Only "--target-list=i386-softmmu,x86_64-softmmu"
-    ++ optional (hasSuffix "linux" stdenv.system) "--enable-linux-aio";
+    ++ optional stdenv.isDarwin "--enable-cocoa"
+    ++ optional stdenv.isLinux "--enable-linux-aio";
 
   postInstall =
     ''
@@ -65,6 +74,6 @@ stdenv.mkDerivation rec {
     description = "A generic and open source machine emulator and virtualizer";
     license = licenses.gpl2Plus;
     maintainers = with maintainers; [ viric eelco ];
-    platforms = platforms.linux;
+    platforms = platforms.linux ++ platforms.darwin;
   };
 }

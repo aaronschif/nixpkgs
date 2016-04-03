@@ -7,7 +7,7 @@
 let
 
   generic =
-    { version, sha256, url ? "http://www.php.net/distributions/php-${version}.tar.bz2" }:
+    { version, sha256 }:
 
     let php7 = lib.versionAtLeast version "7.0"; in
 
@@ -20,6 +20,8 @@ let
       enableParallelBuilding = true;
 
       buildInputs = [ flex bison pkgconfig ];
+
+      configureFlags = ["EXTENSION_DIR=$(out)/lib/php/extensions"];
 
       flags = {
 
@@ -268,7 +270,8 @@ let
       '';
 
       src = fetchurl {
-        inherit url sha256;
+        url = "http://www.php.net/distributions/php-${version}.tar.bz2";
+        inherit sha256;
       };
 
       meta = with stdenv.lib; {
@@ -284,25 +287,19 @@ let
 
 in {
 
-  php54 = generic {
-    version = "5.4.44";
-    sha256 = "0vc5lf0yjk1fs7inri76mh0lrcmq32ji4m6yqdmg7314x5f9xmcd";
-  };
-
   php55 = generic {
-    version = "5.5.28";
-    sha256 = "1wy2v5rmbiia3v6fc8nwg1y3sdkdmicksxnkadz1f3035rbjqz8r";
+    version = "5.5.33";
+    sha256 = "1a8ac1zcq68irvdffh08cpi4aaaira4hsqwgns7b95pm9pnv3464";
   };
 
   php56 = generic {
-    version = "5.6.12";
-    sha256 = "0fl5r0lzav7icg97p7gkvbxk0xk2mh7i1r45dycjlyxgf91109vg";
+    version = "5.6.19";
+    sha256 = "0s61fncsdgr1mqgh8jma6pi6xxz4gl350467lk00ls3i97wa691a";
   };
 
-  php70 = lib.lowPrio (generic {
-    version = "7.0.0beta1";
-    url = "https://downloads.php.net/~ab/php-7.0.0beta1.tar.bz2";
-    sha256 = "1pj3ysfhswg2r370ivp33fv9zbcl3yvhmxgnc731k08hv6hmd984";
-  });
+  php70 = generic {
+    version = "7.0.5";
+    sha256 = "1s8xnnxwq5big2rnbp3w7zw7wh5d5ra9p2q9bxwylds5wrzsy29c";
+  };
 
 }

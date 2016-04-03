@@ -1,11 +1,11 @@
 { stdenv, fetchFromGitHub }:
 
-let version = "124"; in
-stdenv.mkDerivation {
+stdenv.mkDerivation rec {
   name = "mcelog-${version}";
+  version = "135";
 
   src = fetchFromGitHub {
-    sha256 = "02yqf9vcbkw9kpl0dl619scb9njkwklspvr5mhjb307004b71qqd";
+    sha256 = "1bkbcb2zz7x7q893f1r8bm783jb3v7ww1yqys1hmqzn40hdwfr8p";
     rev = "v${version}";
     repo = "mcelog";
     owner = "andikleen";
@@ -16,12 +16,15 @@ stdenv.mkDerivation {
       substituteInPlace $i --replace /etc $out/etc
     done
     touch mcelog.conf.5 # avoid regeneration requiring Python
+
+    substituteInPlace Makefile --replace '"unknown"' '"${version}"'
   '';
 
-  installFlags = "DESTDIR=$(out) prefix= DOCDIR=/share/doc";
+  enableParallelBuilding = true;
+
+  installFlags = [ "DESTDIR=$(out)" "prefix=" "DOCDIR=/share/doc" ];
 
   meta = with stdenv.lib; {
-    inherit version;
     description = "Log x86 machine checks: memory, IO, and CPU hardware errors";
     longDescription = ''
       The mcelog daemon accounts memory and some other errors in various ways

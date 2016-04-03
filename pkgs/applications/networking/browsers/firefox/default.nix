@@ -1,10 +1,10 @@
 { lib, stdenv, fetchurl, pkgconfig, gtk, gtk3, pango, perl, python, zip, libIDL
-, libjpeg, zlib, dbus, dbus_glib, bzip2, xlibs
+, libjpeg, zlib, dbus, dbus_glib, bzip2, xorg
 , freetype, fontconfig, file, alsaLib, nspr, nss, libnotify
 , yasm, mesa, sqlite, unzip, makeWrapper, pysqlite
 , hunspell, libevent, libstartup_notification, libvpx
 , cairo, gstreamer, gst_plugins_base, icu, libpng, jemalloc, libpulseaudio
-, enableGTK3 ? false, fetchpatch
+, enableGTK3 ? false
 , debugBuild ? false
 , # If you want the resulting program to call itself "Firefox" instead
   # of "Shiretoko" or whatever, enable this option.  However, those
@@ -16,34 +16,25 @@
 
 assert stdenv.cc ? libc && stdenv.cc.libc != null;
 
-let version = "40.0.3"; in
+let
 
-stdenv.mkDerivation rec {
-  name = "firefox-${version}";
+common = { pname, version, sha256 }: stdenv.mkDerivation rec {
+  name = "${pname}-unwrapped-${version}";
 
   src = fetchurl {
-    url = "http://ftp.mozilla.org/pub/mozilla.org/firefox/releases/${version}/source/firefox-${version}.source.tar.bz2";
-    sha1 = "6ddda46bd6540ab3ae932fbb5ffec8e9a85cab13";
+    url =
+      let ext = if lib.versionAtLeast version "41.0" then "xz" else "bz2";
+      in "http://ftp.mozilla.org/pub/mozilla.org/firefox/releases/${version}/source/firefox-${version}.source.tar.${ext}";
+    inherit sha256;
   };
-
-  patches = if !enableGTK3 then null else [(fetchpatch {
-    name = "crash_OTMC+GTK3.patch";
-    # backported from 40.1
-    # https://bugzilla.mozilla.org/show_bug.cgi?id=1127752
-    # https://bugzilla.redhat.com/show_bug.cgi?id=1256875
-    url = "http://pkgs.fedoraproject.org/cgit/firefox.git/plain/"
-      + "mozilla-1127752.patch?id=571fefe2c8f741b92c865e9122af56f6258b3fc1";
-    sha256 = "04yq4lcq8ln2fmknz4c0zah77wxqp2mcgr8pjx860dmcmzvyi3p5";
-  })];
-  patchFlags = "-p2";
 
   buildInputs =
     [ pkgconfig gtk perl zip libIDL libjpeg zlib bzip2
-      python dbus dbus_glib pango freetype fontconfig xlibs.libXi
-      xlibs.libX11 xlibs.libXrender xlibs.libXft xlibs.libXt file
-      alsaLib nspr nss libnotify xlibs.pixman yasm mesa
-      xlibs.libXScrnSaver xlibs.scrnsaverproto pysqlite
-      xlibs.libXext xlibs.xextproto sqlite unzip makeWrapper
+      python dbus dbus_glib pango freetype fontconfig xorg.libXi
+      xorg.libX11 xorg.libXrender xorg.libXft xorg.libXt file
+      alsaLib nspr nss libnotify xorg.pixman yasm mesa
+      xorg.libXScrnSaver xorg.scrnsaverproto pysqlite
+      xorg.libXext xorg.xextproto sqlite unzip makeWrapper
       hunspell libevent libstartup_notification libvpx /* cairo */
       gstreamer gst_plugins_base icu libpng jemalloc
       libpulseaudio # only headers are needed
@@ -77,11 +68,12 @@ stdenv.mkDerivation rec {
       "--disable-installer"
       "--disable-updater"
       "--enable-jemalloc"
+      "--disable-gconf"
     ]
     ++ lib.optional enableGTK3 "--enable-default-toolkit=cairo-gtk3"
     ++ (if debugBuild then [ "--enable-debug" "--enable-profiling" ]
                       else [ "--disable-debug" "--enable-release"
-                             "--enable-optimize${lib.optionalString (stdenv.system == "i686-linux") "=-O1"}"
+                             "--enable-optimize"
                              "--enable-strip" ])
     ++ lib.optional enableOfficialBranding "--enable-official-branding";
 
@@ -89,9 +81,9 @@ stdenv.mkDerivation rec {
 
   preConfigure =
     ''
+      configureScript="$(realpath ./configure)"
       mkdir ../objdir
       cd ../objdir
-      configureScript=../mozilla-release/configure
     '';
 
   preInstall =
@@ -103,7 +95,7 @@ stdenv.mkDerivation rec {
   postInstall =
     ''
       # For grsecurity kernels
-      paxmark m $out/lib/${name}/{firefox,firefox-bin,plugin-container}
+      paxmark m $out/lib/${pname}-${version}/{firefox,firefox-bin,plugin-container}
 
       # Remove SDK cruft. FIXME: move to a separate output?
       rm -rf $out/share/idl $out/include $out/lib/firefox-devel-*
@@ -121,7 +113,7 @@ stdenv.mkDerivation rec {
     '';
 
   meta = {
-    description = "Web browser";
+    description = "A web browser" + lib.optionalString (pname == "firefox-esr") " (Extended Support Release)";
     homepage = http://www.mozilla.com/en-US/firefox/;
     maintainers = with lib.maintainers; [ eelco ];
     platforms = lib.platforms.linux;
@@ -130,5 +122,22 @@ stdenv.mkDerivation rec {
   passthru = {
     inherit gtk nspr version;
     isFirefox3Like = true;
+    browserName = pname;
   };
+};
+
+in {
+
+  firefox-unwrapped = common {
+    pname = "firefox";
+    version = "45.0.1";
+    sha256 = "1j6raz51zcj2hxk0spk5zq8xzxi5nlxxm60dpnb7cs6dv334m0fi";
+  };
+
+  firefox-esr-unwrapped = common {
+    pname = "firefox-esr";
+    version = "45.0.1esr";
+    sha256 = "0rkk3cr3r7v5xzbcqhyx8b633v4a16ika0wk46p0ichh9n5mci0s";
+  };
+
 }

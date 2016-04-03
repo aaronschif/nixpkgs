@@ -1,33 +1,33 @@
 { mkDerivation, aeson, base, bytestring, Cabal, containers, deepseq
-, deepseq-generics, directory, doctest, filepath, hackage-db, hspec
-, language-nix, lens, lens-construction-helper, pretty, process
-, SHA, split, stdenv, transformers, utf8-string, fetchFromGitHub
+, deepseq-generics, directory, doctest, filepath, hackage-db
+, hashable, hspec, language-nix, lens, pretty, process, QuickCheck
+, SHA, split, stdenv, text, transformers, unordered-containers
+, utf8-string, yaml, fetchFromGitHub
 }:
 
 mkDerivation rec {
   pname = "distribution-nixpkgs";
-  version = "20150824-66-gd281a60";
+  version = "1";
   src = fetchFromGitHub {
     owner = "nixos";
     repo = "cabal2nix";
-    rev = "v${version}";
-    sha256 = "1ffizg60ihkipcgqr5km4vxgnqv2pdw4716amqlxgf31wj59nyas";
+    rev = "v20160308";
+    sha256 = "02lj3x0rgpxvaimwbbjjgwm4ka0wkk4x5h35jjygz6bkr5lv3m52";
   };
   postUnpack = "sourceRoot+=/${pname}";
   libraryHaskellDepends = [
-    aeson base bytestring Cabal containers deepseq deepseq-generics
-    directory doctest filepath hackage-db hspec language-nix lens
-    lens-construction-helper pretty process SHA split transformers
-    utf8-string
+    aeson base bytestring Cabal containers deepseq-generics directory
+    filepath hackage-db hashable language-nix lens pretty process SHA
+    split text transformers unordered-containers utf8-string yaml
   ];
   testHaskellDepends = [
     aeson base bytestring Cabal containers deepseq deepseq-generics
-    directory doctest filepath hackage-db hspec language-nix lens
-    lens-construction-helper pretty process SHA split transformers
-    utf8-string
+    directory doctest filepath hackage-db hashable hspec language-nix
+    lens pretty process QuickCheck SHA split text transformers
+    unordered-containers utf8-string yaml
   ];
   homepage = "https://github.com/nixos/cabal2nix#readme";
-  description = "Convert Cabal files into Nix build instructions";
+  description = "Data types and functions to manipulate the Nixpkgs distribution";
   license = stdenv.lib.licenses.bsd3;
   maintainers = with stdenv.lib.maintainers; [ simons ];
 }

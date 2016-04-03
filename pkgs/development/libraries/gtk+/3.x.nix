@@ -3,14 +3,17 @@
 , xlibs, x11, wayland, libxkbcommon, epoxy
 , xineramaSupport ? stdenv.isLinux
 , cupsSupport ? stdenv.isLinux, cups ? null
+, darwin
 }:
 
 assert xineramaSupport -> xlibs.libXinerama != null;
 assert cupsSupport -> cups != null;
 
+with stdenv.lib;
+
 let
-  ver_maj = "3.16";
-  ver_min = "6";
+  ver_maj = "3.18";
+  ver_min = "5";
   version = "${ver_maj}.${ver_min}";
 in
 stdenv.mkDerivation rec {
@@ -18,7 +21,7 @@ stdenv.mkDerivation rec {
 
   src = fetchurl {
     url = "mirror://gnome/sources/gtk+/${ver_maj}/gtk+-${version}.tar.xz";
-    sha256 = "1gpzlnfrifc17yfk0zki6b2vmsfpf5cmrbh232s6iaan11np44jd";
+    sha256 = "107aeb9a4244ce3c044becdd6dffc32d83202595181597180d4c736302a71852";
   };
 
   nativeBuildInputs = [ pkgconfig gettext gobjectIntrospection perl ];
@@ -27,6 +30,7 @@ stdenv.mkDerivation rec {
   propagatedBuildInputs = with xlibs; with stdenv.lib;
     [ expat glib cairo pango gdk_pixbuf atk at_spi2_atk libXrandr libXrender libXcomposite libXi libXcursor ]
     ++ optionals stdenv.isLinux [ wayland ]
+    ++ optional stdenv.isDarwin (with darwin.apple_sdk.frameworks; [ AppKit Cocoa ])
     ++ optional xineramaSupport libXinerama
     ++ optional cupsSupport cups;
 
@@ -36,6 +40,14 @@ stdenv.mkDerivation rec {
   preConfigure = "sed '/^SRC_SUBDIRS /s/demos//' -i Makefile.in";
 
   enableParallelBuilding = true;
+
+  configureFlags = optional stdenv.isDarwin [
+    "--disable-debug"
+    "--disable-dependency-tracking"
+    "--disable-glibtest"
+    "--with-gdktarget=quartz"
+    "--enable-quartz-backend"
+  ];
 
   postInstall = "rm -rf $out/share/gtk-doc";
 

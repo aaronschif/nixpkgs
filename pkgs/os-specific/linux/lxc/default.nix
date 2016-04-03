@@ -1,4 +1,4 @@
-{ stdenv, fetchFromGitHub, autoreconfHook, pkgconfig, perl, docbook2x
+{ stdenv, fetchurl, fetchpatch, autoreconfHook, pkgconfig, perl, docbook2x
 , docbook_xml_dtd_45, python3Packages
 
 # Optional Dependencies
@@ -11,13 +11,12 @@ let
 in
 with stdenv.lib;
 stdenv.mkDerivation rec {
-  name = "lxc-1.1.3";
+  name = "lxc-${version}";
+  version = "1.1.5";
 
-  src = fetchFromGitHub {
-    owner = "lxc";
-    repo = "lxc";
-    rev = name;
-    sha256 = "109vpkxzkhixfvwfs6qphfbxb7pbk2qx22qc4zbk52d6gl78ygsb";
+  src = fetchurl {
+    url = "https://linuxcontainers.org/downloads/lxc/lxc-${version}.tar.gz";
+    sha256 = "1gnhgs4i2zamfdydj895inr9i072658wd47nf1ryw5710hdsv24m";
   };
 
   nativeBuildInputs = [
@@ -28,7 +27,13 @@ stdenv.mkDerivation rec {
     python3Packages.python systemd
   ];
 
-  patches = [ ./support-db2x.patch ];
+  patches = [
+    ./support-db2x.patch
+    (fetchpatch {
+      url = "https://github.com/lxc/lxc/commit/3db8dd39a797f87f8b348f1b6b44953a25f3f170.patch";
+      sha256 = "0scbzm9dqqhqsl0ri8da8a34r4qj9ph0cg68l9s7gw01vpvqbs8l";
+    })
+  ];
 
   XML_CATALOG_FILES = "${docbook_xml_dtd_45}/xml/dtd/docbook/catalog.xml";
 
@@ -37,6 +42,8 @@ stdenv.mkDerivation rec {
     "--sysconfdir=/etc"
     "--enable-doc"
     "--disable-api-docs"
+    "--with-init-script=none"
+    "--with-distro=nixos" # just to be sure it is "unknown"
   ] ++ optional (libapparmor != null) "--enable-apparmor"
     ++ optional (libselinux != null) "--enable-selinux"
     ++ optional (libseccomp != null) "--enable-seccomp"
@@ -78,6 +85,6 @@ stdenv.mkDerivation rec {
     '';
 
     platforms = platforms.linux;
-    maintainers = with maintainers; [ simons wkennington globin ];
+    maintainers = with maintainers; [ simons wkennington globin fpletz ];
   };
 }

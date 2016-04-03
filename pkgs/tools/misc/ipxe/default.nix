@@ -18,6 +18,8 @@ stdenv.mkDerivation {
 
   preConfigure = "cd src";
 
+  NIX_CFLAGS_COMPILE = "-Wno-error";
+
   makeFlags =
     [ "ECHO_E_BIN_ECHO=echo" "ECHO_E_BIN_ECHO_E=echo" # No /bin/echo here.
       "ISOLINUX_BIN_LIST=${syslinux}/share/syslinux/isolinux.bin"
@@ -26,14 +28,14 @@ stdenv.mkDerivation {
   installPhase =
     ''
       mkdir $out
-      cp bin/ipxe.dsk bin/ipxe.usb bin/ipxe.iso bin/ipxe.lkrn $out
+      cp bin/ipxe.dsk bin/ipxe.usb bin/ipxe.iso bin/ipxe.lkrn bin/undionly.kpxe $out
     '';
 
   meta = with stdenv.lib;
     { description = "Network boot firmware";
       homepage = http://ipxe.org/;
       license = licenses.gpl2;
-      maintainers = with maintainers; [ emery ];
+      maintainers = with maintainers; [ ehmry ];
       platforms = platforms.all;
     };
 }

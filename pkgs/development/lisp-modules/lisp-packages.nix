@@ -196,7 +196,7 @@ let lispPackages = rec {
     # Source type: git
     src = pkgs.fetchgit {
       url =
-        #''http://git.b9.com/clsql.git''
+        #''http://git.kpe.io/clsql.git''
 	"http://repo.or.cz/r/clsql.git"
 	;
       sha256 = "1wzc7qsnq8hk0j0h9jmj4xczmh7h6njafwab2zylh8wxmfzwp2nw";
@@ -217,7 +217,7 @@ let lispPackages = rec {
     deps = [];
     # Source type: git
     src = pkgs.fetchgit {
-      url = ''http://git.b9.com/uffi.git'';
+      url = ''http://git.kpe.io/uffi.git'';
       sha256 = "219e4cfebfac251c922bcb9d517980b0988d765bd18b7f5cc765a43913aaacc6";
       rev = ''a63da5b764b6fa30e32fcda4ddac88de385c9d5b'';
     };
@@ -467,7 +467,7 @@ let lispPackages = rec {
     deps = [];
     # Source type: git
     src = pkgs.fetchgit {
-      url = ''http://git.b9.com/cl-base64.git'';
+      url = ''http://git.kpe.io/cl-base64.git'';
       sha256 = "a34196544cc67d54aef74e31eff2cee62a7861a5675d010fcd925f1c61c23e81";
       rev = ''f375d1fc3a6616e95ae88bb33493bb99f920ba13'';
     };
@@ -480,7 +480,7 @@ let lispPackages = rec {
     deps = [];
     # Source type: git
     src = pkgs.fetchgit {
-      url = ''http://git.b9.com/puri.git'';
+      url = ''http://git.kpe.io/puri.git'';
       sha256 = "71804698e7f3009fb7f570656af5d952465bfe77f72e9c41f7e2dda8a5b45c5e";
       rev = ''68260dbf320c01089c8cee54ef32c800eefcde7f'';
     };
@@ -572,6 +572,33 @@ let lispPackages = rec {
       url = ''https://github.com/filonenko-mikhail/clx-xkeyboard'';
       sha256 = "11b34da7d354a709a24774032e85a8947be023594f8a333eaff6d4aa79f2b3db";
       rev = ''11455d36283ef31c498bd58ffebf48c0f6b86ea6'';
+    };
+  };
+
+  quicklisp = buildLispPackage rec {
+    baseName = "quicklisp";
+    version = "2016-01-21";
+    description = "The Common Lisp package manager";
+    deps = [];
+    src = pkgs.fetchgit {
+      url = "https://github.com/quicklisp/quicklisp-client/";
+      rev = "refs/tags/version-${version}";
+      sha256 = "0a6zjsd5c8zg2x26lc027538xfl182xvg7ps81pyvi4k5qd42xhd";
+    };
+    overrides = x: rec {
+      inherit clwrapper;
+      quicklispdist = pkgs.fetchurl {
+        # Will usually be replaced with a fresh version anyway, but needs to be
+        # a valid distinfo.txt
+        url = "http://beta.quicklisp.org/dist/quicklisp/2016-03-18/distinfo.txt";
+        sha256 = "13mvign4rsicfvg3vs3vj1qcjvj2m1aqhq93ck0sgizxfcj5167m";
+      };
+      buildPhase = '' true; '';
+      postInstall = ''
+        substituteAll ${./quicklisp.sh} "$out"/bin/quicklisp
+        chmod a+x "$out"/bin/quicklisp
+        cp "${quicklispdist}" "$out/lib/common-lisp/quicklisp/quicklisp-distinfo.txt"
+      '';
     };
   };
 

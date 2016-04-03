@@ -1,8 +1,9 @@
-{ stdenv, fetchgit, buildPythonPackage, pythonPackages }:
+{ stdenv, fetchgit, buildPythonApplication, pythonPackages }:
 
-buildPythonPackage rec {
+buildPythonApplication rec {
 
   name = "grabserial-20141120";
+  namePrefix = "";
 
   src = fetchgit {
     url = https://github.com/tbird20d/grabserial.git;

@@ -1,9 +1,10 @@
 { stdenv, fetchurl, fetchpatch, pkgconfig, libiconv, libintlOrEmpty
-, expat, zlib, libpng, pixman, fontconfig, freetype, xlibs
+, expat, zlib, libpng, pixman, fontconfig, freetype, xorg
 , gobjectSupport ? true, glib
 , xcbSupport ? true # no longer experimental since 1.12
 , glSupport ? true, mesa_noglu ? null # mesa is no longer a big dependency
 , pdfSupport ? true
+, darwin
 }:
 
 assert glSupport -> mesa_noglu != null;
@@ -11,28 +12,41 @@ assert glSupport -> mesa_noglu != null;
 with { inherit (stdenv.lib) optional optionals; };
 
 stdenv.mkDerivation rec {
-  name = "cairo-1.14.2";
+  name = "cairo-1.14.6";
 
   src = fetchurl {
     url = "http://cairographics.org/releases/${name}.tar.xz";
-    sha1 = "c8da68aa66ca0855b5d0ff552766d3e8679e1d24";
+    sha256 = "0lmjlzmghmr27y615px9hkm552x7ap6pmq9mfbzr6smp8y2b6g31";
   };
 
-  nativeBuildInputs = [ pkgconfig libiconv ] ++ libintlOrEmpty;
+  nativeBuildInputs = [
+    pkgconfig
+    libiconv
+  ] ++ libintlOrEmpty ++ optionals stdenv.isDarwin (with darwin.apple_sdk.frameworks; [
+    CoreGraphics
+    ApplicationServices
+    Carbon
+  ]);
 
   propagatedBuildInputs =
-    with xlibs; [ xlibs.xlibs fontconfig expat freetype pixman zlib libpng ]
+    with xorg; [ xorg.xlibsWrapper fontconfig expat freetype pixman zlib libpng ]
     ++ optional (!stdenv.isDarwin) libXrender
     ++ optionals xcbSupport [ libxcb xcbutil ]
     ++ optional gobjectSupport glib
     ++ optionals glSupport [ mesa_noglu ]
     ;
 
-  configureFlags = [ "--enable-tee" ]
+  configureFlags = if stdenv.isDarwin then [
+    "--disable-dependency-tracking"
+    "--enable-quartz"
+    "--enable-quartz-font"
+    "--enable-quartz-image"
+    "--enable-ft"
+  ] else ([ "--enable-tee" ]
     ++ optional xcbSupport "--enable-xcb"
     ++ optional glSupport "--enable-gl"
     ++ optional pdfSupport "--enable-pdf"
-    ;
+  );
 
   preConfigure =
   # On FreeBSD, `-ldl' doesn't exist.

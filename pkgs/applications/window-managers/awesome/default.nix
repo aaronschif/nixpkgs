@@ -1,13 +1,13 @@
 { stdenv, fetchurl, luaPackages, cairo, cmake, imagemagick, pkgconfig, gdk_pixbuf
-, xlibs, libstartup_notification, libxdg_basedir, libpthreadstubs
+, xorg, libstartup_notification, libxdg_basedir, libpthreadstubs
 , xcb-util-cursor, makeWrapper, pango, gobjectIntrospection, unclutter
 , compton, procps, iproute, coreutils, curl, alsaUtils, findutils, xterm
 , which, dbus, nettools, git, asciidoc, doxygen
-#, xmlto, docbook_xml_dtd_45 , docbook_xsl
+, xmlto, docbook_xml_dtd_45, docbook_xsl, findXMLCatalogs
 }:
 
 let
-  version = "3.5.6";
+  version = "3.5.9";
 in with luaPackages;
 
 stdenv.mkDerivation rec {
@@ -15,7 +15,7 @@ stdenv.mkDerivation rec {
 
   src = fetchurl {
     url    = "http://awesome.naquadah.org/download/awesome-${version}.tar.xz";
-    sha256 = "1ms6a3l1i2jdhzrd1zr25cqckznmb44qgz4n635jam42hzhrvx1p";
+    sha256 = "0kynair1ykr74b39a4gcm2y24viial64337cf26nhlc7azjbby67";
   };
 
   meta = with stdenv.lib; {
@@ -26,36 +26,39 @@ stdenv.mkDerivation rec {
     platforms   = platforms.linux;
   };
 
-  buildInputs = [
+  nativeBuildInputs = [
     asciidoc
-    cairo
     cmake
-    dbus
     doxygen
+    imagemagick
+    makeWrapper
+    pkgconfig
+    xmlto docbook_xml_dtd_45 docbook_xsl findXMLCatalogs
+  ];
+
+  buildInputs = [
+    cairo
+    dbus
     gdk_pixbuf
     gobjectIntrospection
     git
-    imagemagick
     lgi
     libpthreadstubs
     libstartup_notification
     libxdg_basedir
     lua
-    makeWrapper
     nettools
     pango
-    pkgconfig
     xcb-util-cursor
-    xlibs.libXau
-    xlibs.libXdmcp
-    xlibs.libxcb
-    xlibs.libxshmfence
-    xlibs.xcbutil
-    xlibs.xcbutilimage
-    xlibs.xcbutilkeysyms
-    xlibs.xcbutilrenderutil
-    xlibs.xcbutilwm
-    #xmlto docbook_xml_dtd_45 docbook_xsl
+    xorg.libXau
+    xorg.libXdmcp
+    xorg.libxcb
+    xorg.libxshmfence
+    xorg.xcbutil
+    xorg.xcbutilimage
+    xorg.xcbutilkeysyms
+    xorg.xcbutilrenderutil
+    xorg.xcbutilwm
   ];
 
   #cmakeFlags = "-DGENERATE_MANPAGES=ON";

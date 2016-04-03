@@ -1,4 +1,4 @@
-{stdenv, fetchurl, ocaml, findlib, type-conv, camlp4}:
+{stdenv, fetchurl, ocaml, findlib, type_conv, camlp4}:
 
 let
   ocaml_version = (builtins.parseDrvName ocaml.name).version;
@@ -15,7 +15,7 @@ stdenv.mkDerivation {
   };
 
   buildInputs = [ocaml findlib];
-  propagatedBuildInputs = [type-conv camlp4];
+  propagatedBuildInputs = [type_conv camlp4];
 
   createFindlibDestdir = true;
 
@@ -24,6 +24,6 @@ stdenv.mkDerivation {
     description = "Library for serializing OCaml values to and from S-expressions";
     license = licenses.asl20;
     maintainers = [ maintainers.vbgl maintainers.ericbmerritt ];
-    platforms = ocaml.meta.platforms;
+    platforms = ocaml.meta.platforms or [];
   };
 }

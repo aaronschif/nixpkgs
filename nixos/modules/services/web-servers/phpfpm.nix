@@ -36,7 +36,9 @@ in {
       };
 
       phpPackage = mkOption {
+        type = types.package;
         default = pkgs.php;
+        defaultText = "pkgs.php";
         description = ''
           The PHP package to use for running the FPM service.
         '';
@@ -51,18 +53,19 @@ in {
       poolConfigs = mkOption {
         type = types.attrsOf types.lines;
         default = {};
-        example = {
-          mypool = ''
-            listen = /run/phpfpm/mypool
-            user = nobody
-            pm = dynamic
-            pm.max_children = 75
-            pm.start_servers = 10
-            pm.min_spare_servers = 5
-            pm.max_spare_servers = 20
-            pm.max_requests = 500
-          '';
-        };
+        example = literalExample ''
+          { mypool = '''
+              listen = /run/phpfpm/mypool
+              user = nobody
+              pm = dynamic
+              pm.max_children = 75
+              pm.start_servers = 10
+              pm.min_spare_servers = 5
+              pm.max_spare_servers = 20
+              pm.max_requests = 500
+            ''';
+          }
+        '';
         description = ''
           A mapping between PHP FPM pool names and their configurations.
           See the documentation on <literal>php-fpm.conf</literal> for

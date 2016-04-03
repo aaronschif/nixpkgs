@@ -1,10 +1,11 @@
 { stdenv
-, fetchurl
+, fetchFromGitHub
 , cmake
 , ffmpeg
 , jansson
 , libxkbcommon
-, qt5
+, qtbase
+, qtx11extras
 , libv4l
 , x264
 , curl
@@ -17,21 +18,25 @@ let
   optional = stdenv.lib.optional;
 in stdenv.mkDerivation rec {
   name = "obs-studio-${version}";
-  version = "0.11.1";
+  version = "0.13.1";
 
-  src = fetchurl {
-    url = "https://github.com/jp9000/obs-studio/archive/${version}.tar.gz";
-    sha256 = "12g1y6y8ixvgvwk75x7qgq0j06d5khd0w3if6kahswlc58q65fm8";
+  src = fetchFromGitHub {
+    owner = "jp9000";
+    repo = "obs-studio";
+    rev = "${version}";
+    sha256 = "00dx8lksj10n0qhyar41y5q0bdrz7jdjwmhj8bdyz7jfkijjr44i";
   };
 
-  buildInputs = [ cmake
-                  curl
+  nativeBuildInputs = [ cmake
+                      ];
+
+  buildInputs = [ curl
                   ffmpeg
                   jansson
                   libv4l
                   libxkbcommon
-                  qt5.base
-                  qt5.x11extras
+                  qtbase
+                  qtx11extras
                   x264
                 ]
                 ++ optional pulseaudioSupport libpulseaudio;

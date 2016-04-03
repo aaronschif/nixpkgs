@@ -1,24 +1,28 @@
-{ mkDerivation, base, Cabal, containers, distribution-nixpkgs
-, filepath, language-nix, lens, monad-par, monad-par-extras, mtl
-, optparse-applicative, pretty, stdenv, fetchFromGitHub
+{ mkDerivation, aeson, base, bytestring, Cabal, containers
+, deepseq-generics, directory, distribution-nixpkgs, filepath
+, language-nix, lens, monad-par, monad-par-extras, mtl
+, optparse-applicative, pretty, SHA, split, stackage-types, stdenv
+, text, time, utf8-string, yaml, fetchFromGitHub
 }:
 
 mkDerivation rec {
   pname = "hackage2nix";
-  version = "20150824-66-gd281a60";
+  version = "20160308";
   src = fetchFromGitHub {
     owner = "nixos";
     repo = "cabal2nix";
     rev = "v${version}";
-    sha256 = "1ffizg60ihkipcgqr5km4vxgnqv2pdw4716amqlxgf31wj59nyas";
+    sha256 = "02lj3x0rgpxvaimwbbjjgwm4ka0wkk4x5h35jjygz6bkr5lv3m52";
   };
   postUnpack = "sourceRoot+=/${pname}";
   isLibrary = false;
   isExecutable = true;
   enableSharedExecutables = false;
   executableHaskellDepends = [
-    base Cabal containers distribution-nixpkgs filepath language-nix
-    lens monad-par monad-par-extras mtl optparse-applicative pretty
+    aeson base bytestring Cabal containers deepseq-generics directory
+    distribution-nixpkgs filepath language-nix lens monad-par
+    monad-par-extras mtl optparse-applicative pretty SHA split
+    stackage-types text time utf8-string yaml
   ];
   postInstall = ''
     exe=$out/bin/${pname}

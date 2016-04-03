@@ -1,6 +1,6 @@
 { system ? builtins.currentSystem }:
 
-with import ../../top-level/all-packages.nix {inherit system;};
+with import ../../.. {inherit system;};
 
 rec {
 
@@ -9,12 +9,6 @@ rec {
   coreutilsMinimal = coreutils.override (args: {
     aclSupport = false;
   });
-
-  curlMinimal = curl.override {
-    zlibSupport = false;
-    sslSupport = false;
-    scpSupport = false;
-  };
 
   busyboxMinimal = busybox.override {
     useMusl = true;
@@ -34,7 +28,7 @@ rec {
   build =
 
     stdenv.mkDerivation {
-      name = "build";
+      name = "stdenv-bootstrap-tools";
 
       buildInputs = [nukeReferences cpio];
 
@@ -57,7 +51,15 @@ rec {
         cp -d ${glibc}/lib/crt?.o $out/lib
 
         cp -rL ${glibc}/include $out
-        chmod -R u+w $out/include
+        chmod -R u+w "$out"
+
+        # glibc can contain linker scripts: find them, copy their deps,
+        # and get rid of absolute paths (nuke-refs would make them useless)
+        local lScripts=$(grep --files-with-matches --max-count=1 'GNU ld script' -R "$out/lib")
+        cp -d -t "$out/lib/" $(cat $lScripts | tr " " "\n" | grep -F '${glibc}' | sort -u)
+        for f in $lScripts; do
+          substituteInPlace "$f" --replace '${glibc}/lib/' ""
+        done
 
         # Hopefully we won't need these.
         rm -rf $out/include/mtd $out/include/rdma $out/include/sound $out/include/video
@@ -83,8 +85,6 @@ rec {
         cp -d ${gnumake}/bin/* $out/bin
         cp -d ${patch}/bin/* $out/bin
         cp ${patchelf}/bin/* $out/bin
-        cp ${curlMinimal}/bin/curl $out/bin
-        cp -d ${curlMinimal}/lib/libcurl* $out/lib
 
         cp -d ${gnugrep.pcre}/lib/libpcre*.so* $out/lib # needed by grep
 
@@ -154,12 +154,67 @@ rec {
       allowedReferences = [];
     };
 
-  test = ((import ./default.nix) {
+  dist = stdenv.mkDerivation {
+    name = "stdenv-bootstrap-tools";
+
+    buildCommand = ''
+      mkdir -p $out/nix-support
+      echo "file tarball ${build}/on-server/bootstrap-tools.tar.xz" >> $out/nix-support/hydra-build-products
+      echo "file busybox ${build}/on-server/busybox" >> $out/nix-support/hydra-build-products
+    '';
+  };
+
+  bootstrapFiles = {
+    busybox = "${build}/on-server/busybox";
+    bootstrapTools = "${build}/on-server/bootstrap-tools.tar.xz";
+  };
+
+  bootstrapTools = (import ./default.nix {
+    inherit system bootstrapFiles;
+  }).bootstrapTools;
+
+  test = derivation {
+    name = "test-bootstrap-tools";
     inherit system;
-    
-    customBootstrapFiles = {
-      busybox = "${build}/on-server/busybox";
-      bootstrapTools = "${build}/on-server/bootstrap-tools.tar.xz";
-    };
-  }).testBootstrapTools;
+    builder = bootstrapFiles.busybox;
+    args = [ "ash" "-e" "-c" "eval \"$buildCommand\"" ];
+
+    buildCommand = ''
+      export PATH=${bootstrapTools}/bin
+
+      ls -l
+      mkdir $out
+      mkdir $out/bin
+      sed --version
+      find --version
+      diff --version
+      patch --version
+      make --version
+      awk --version
+      grep --version
+      gcc --version
+
+      ldlinux=$(echo ${bootstrapTools}/lib/ld-linux*.so.?)
+      export CPP="cpp -idirafter ${bootstrapTools}/include-glibc -B${bootstrapTools}"
+      export CC="gcc -idirafter ${bootstrapTools}/include-glibc -B${bootstrapTools} -Wl,-dynamic-linker,$ldlinux -Wl,-rpath,${bootstrapTools}/lib"
+      export CXX="g++ -idirafter ${bootstrapTools}/include-glibc -B${bootstrapTools} -Wl,-dynamic-linker,$ldlinux -Wl,-rpath,${bootstrapTools}/lib"
+
+      echo '#include <stdio.h>' >> foo.c
+      echo '#include <limits.h>' >> foo.c
+      echo 'int main() { printf("Hello World\\n"); return 0; }' >> foo.c
+      $CC -o $out/bin/foo foo.c
+      $out/bin/foo
+
+      echo '#include <iostream>' >> bar.cc
+      echo 'int main() { std::cout << "Hello World\\n"; }' >> bar.cc
+      $CXX -v -o $out/bin/bar bar.cc
+      $out/bin/bar
+
+      tar xvf ${hello.src}
+      cd hello-*
+      ./configure --prefix=$out
+      make
+      make install
+    '';
+  };
 }

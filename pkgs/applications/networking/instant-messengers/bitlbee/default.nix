@@ -1,12 +1,12 @@
-{ fetchurl, stdenv, gnutls, glib, pkgconfig, check, libotr, python }:
+{ fetchurl, fetchpatch, stdenv, gnutls, glib, pkgconfig, check, libotr, python }:
 
 with stdenv.lib;
 stdenv.mkDerivation rec {
-  name = "bitlbee-3.4.1";
+  name = "bitlbee-3.4.2";
 
   src = fetchurl {
     url = "mirror://bitlbee/src/${name}.tar.gz";
-    sha256 = "1qf0ypa9ba5jvsnpg9slmaran16hcc5fnfzbb1sdch1hjhchn2jh";
+    sha256 = "0mza8lnfwibmklz8hdzg4f7p83hblf4h6fbf7d732kzpvra5bj39";
   };
 
   buildInputs = [ gnutls glib pkgconfig libotr python ]
@@ -16,7 +16,12 @@ stdenv.mkDerivation rec {
     "--gcov=1"
     "--otr=1"
     "--ssl=gnutls"
+    "--pidfile=/var/lib/bitlbee/bitlbee.pid"
   ];
+
+  buildPhase = ''
+    make install-dev
+  '';
 
   doCheck = true;
 

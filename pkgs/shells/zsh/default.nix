@@ -1,12 +1,12 @@
-{ stdenv, fetchurl, ncurses, coreutils, pcre }:
+{ stdenv, fetchurl, ncurses, pcre }:
 
 let
 
-  version = "5.0.8";
+  version = "5.2";
 
   documentation = fetchurl {
-    url = "mirror://sourceforge/zsh/zsh-${version}-doc.tar.bz2";
-    sha256 = "0h4y6f0fjb1lf83j4cixl0h5jgyy5q7y1iw7w33flp7s8y60ir8f";
+    url = "mirror://sourceforge/zsh/zsh-${version}-doc.tar.gz";
+    sha256 = "1r9r91gmrrflzl0yq10bib9gxbqyhycb09hcx28m2g3vv9skmccj";
   };
 
 in
@@ -15,20 +15,28 @@ stdenv.mkDerivation {
   name = "zsh-${version}";
 
   src = fetchurl {
-    url = "mirror://sourceforge/zsh/zsh-${version}.tar.bz2";
-    sha256 = "08vxw74v8cx6hcynz0cdf7s2z5p6nqmxfsxmhhpz5vwbrc4cyyc0";
+    url = "mirror://sourceforge/zsh/zsh-${version}.tar.gz";
+    sha256 = "0dsr450v8nydvpk8ry276fvbznlrjgddgp7zvhcw4cv69i9lr4ps";
   };
 
-  buildInputs = [ ncurses coreutils pcre ];
+  buildInputs = [ ncurses pcre ];
 
   preConfigure = ''
     configureFlags="--enable-maildir-support --enable-multibyte --enable-zprofile=$out/etc/zprofile --with-tcsetpgrp --enable-pcre"
   '';
 
+  # the zsh/zpty module is not available on hydra
+  # so skip groups Y Z
+  checkFlagsArray = ''
+    (TESTNUM=A TESTNUM=B TESTNUM=C TESTNUM=D TESTNUM=E TESTNUM=V TESTNUM=W)
+  '';
+
   # XXX: think/discuss about this, also with respect to nixos vs nix-on-X
   postInstall = ''
-    mkdir -p $out/share/
+    mkdir -p $out/share/info
     tar xf ${documentation} -C $out/share
+    ln -s $out/share/zsh-*/Doc/zsh.info* $out/share/info/
+
     mkdir -p $out/etc/
     cat > $out/etc/zprofile <<EOF
 if test -e /etc/NIXOS; then
